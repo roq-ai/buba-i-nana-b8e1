@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model event {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name            String        @db.VarChar(255)
+  description     String?       @db.VarChar(255)
+  date            DateTime      @db.Date
+  user_id         String?       @db.Uuid
+  organization_id String?       @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamp(6)
+  updated_at      DateTime      @default(now()) @db.Timestamp(6)
+  organization    organization? @relation(fields: [organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user            user?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model friend {
+  id                          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id                     String?  @db.Uuid
+  friend_id                   String?  @db.Uuid
+  created_at                  DateTime @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime @default(now()) @db.Timestamp(6)
+  user_friend_friend_idTouser user?    @relation("friend_friend_idTouser", fields: [friend_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_friend_user_idTouser   user?    @relation("friend_user_idTouser", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model organization {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  description String?  @db.VarChar(255)
+  image       String?  @db.VarChar(255)
+  name        String   @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  user_id     String   @db.Uuid
+  tenant_id   String   @db.VarChar(255)
+  event       event[]
+  user        user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                         String         @unique @db.VarChar(255)
+  firstName                     String?        @db.VarChar(255)
+  lastName                      String?        @db.VarChar(255)
+  roq_user_id                   String         @db.VarChar(255)
+  tenant_id                     String         @db.VarChar(255)
+  created_at                    DateTime       @default(now()) @db.Timestamp(6)
+  updated_at                    DateTime       @default(now()) @db.Timestamp(6)
+  event                         event[]
+  friend_friend_friend_idTouser friend[]       @relation("friend_friend_idTouser")
+  friend_friend_user_idTouser   friend[]       @relation("friend_user_idTouser")
+  organization                  organization[]
+}
